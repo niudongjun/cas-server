@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"/>
+    <title>Kaptcha</title>
+    <link href="../static/css/cas.css" rel="stylesheet" th:remove="tag"/>
+    <script type="text/javascript" th:src="@{/webjars/jquery/jquery.min.js}"></script>
+    <style>
+        .top_left_center {
+            position: absolute;
+            left: 42%;
+            top: 30%;
+        }
+        .confirm_btn {
+            width: 220px;
+            height: 28px;
+            border-style: none;
+            border-radius: 5px;
+            background-color: limegreen;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+<main role="main" class="container mt-3 mb-3 top_left_center">
+    <div class="row" style="text-align: center">
+        <div class="col-md">
+            <div class="card">
+                <div class="card-body">
+                    <p>
+                        <img src="/cas/images/kaptcha.jpg" width="100px;" height="28px;" style="vertical-align: text-bottom;" onclick="changeImage(this)">
+                        <label style="text-align: left; font-size: xx-small;">看不清楚？点击图片刷新</label>
+                    </p>
+                    <p>
+                        <input id="kCode" type="text" placeholder="请输入验证码" style="width: 220px; height: 28px;"/>
+                    </p>
+                    <input class="btn btn-block btn-submit confirm_btn" type="button" value="确定" onclick="verifyKCode()"/>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script th:inline="javascript">
+        function changeImage(node) {
+            node.src="/cas/images/kaptcha.jpg?time="+new Date().getTime()
+        }
+        function verifyKCode() {
+            var kCode = $("#kCode").val()
+            var searchStr = location.search
+            if (kCode == null || kCode === "" || searchStr == null || searchStr === "") {
+                return
+            }
+            searchStr = searchStr.substr(1)
+            $.ajax({
+                type: "GET",
+                url: "/cas/check/code?kCode="+kCode+"&"+searchStr,
+                async: false,
+                error: function (e) {
+                    alert("verify code failed")
+                },
+                complete: function (XHR, TS) {
+                    redirectFun(XHR)
+                }
+            })
+        }
+        function redirectFun(xhr) {
+            // 通过XMLHttpRequest取得响应头，sessionstatus
+            var enable = xhr.getResponseHeader(`enableRedirect`)
+            var url = xhr.getResponseHeader("redirectUrl")
+            if(enable === "true" && url !== ""){ //若HEADER中含有REDIRECT说明后端想重定向，
+                var win = window;
+                while(win !== win.top){
+                    win = win.top;
+                }
+                win.location.href = url;//将后端重定向的地址取出来,使用win.location.href去实现重定向的要求
+            }
+        }
+    </script>
+</main>
+</body>
+</html>
